@@ -1,33 +1,28 @@
 import socket
 import threading
-import os
-
-
-UDP_MAX_SIZE = 65535
 
 
 def listen(s: socket.socket):
     while True:
-        msg = s.recv(UDP_MAX_SIZE)
-        print('\r\r' + msg.decode('ascii') + '\n' + f'you: ', end='')
+        msg = s.recv(1024)
+        print('\r\r' + msg.decode('utf-8') + '\n', end='')
 
 
-def connect(host: str = '127.0.0.1', port: int = 8000):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def connect(host: str = '127.0.0.1', port: int = 6555):
+    user_name = input('Введите никнейм: ')
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     s.connect((host, port))
 
     threading.Thread(target=listen, args=(s,), daemon=True).start()
 
-    s.send('__join'.encode('ascii'))
+    s.send((user_name + ' подключатеся к чату').encode('utf-8'))
 
     while True:
-        msg = input(f'you: ')
-        s.send(msg.encode('ascii'))
+        msg = input('[Вы]: ')
+        s.send(('[' + user_name + '] ' + msg).encode('utf-8'))
 
 
 if __name__ == '__main__':
-    os.system('clear')
-    print('Welcome to chat!')
     connect()
-    

@@ -1,38 +1,39 @@
+import time
 import socket
-
-UDP_MAX_SIZE = 65535
-
+import threading
 
 
-def listen(host: str = '127.0.0.1', port: int = 8000):
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+class Server:
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+        self.members = []
 
-    s.bind((host, port))
-    print(f'Listening at {host}:{port}')
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((self.ip, self.port))
+        self.server.listen(0)
+        threading.Thread(target=self.connect).start()
+        print(f'Listening at {self.ip}:{self.port}')
 
-    members = []
-    while True:
-        msg, addr = s.recvfrom(UDP_MAX_SIZE)
+    def connect(self):
+        while True:
+            client, address = self.server.accept()
+            if client not in self.members:
+                self.members.append(client)
+                threading.Thread(target=self.message_handler, args=(client,)).start()
+                client.send('Успешное подключение к чату!'.encode('utf-8'))
+            time.sleep(1)
 
-        if addr not in members:
-            members.append(addr)
+    def message_handler(self, client_socket):
+        while True:
+            message = client_socket.recv(1024)
+            print(message)
 
-        if not msg:
-            continue
-
-        client_id = addr[1]
-        if msg.decode('ascii') == '__join':
-            print(f'Client {client_id} joined chat')
-            continue
-
-        msg = f'client{client_id}: {msg.decode("ascii")}'
-        for member in members:
-            if member == addr:
-                continue
-
-            s.sendto(msg.encode('ascii'), member)
+            for client in self.members:
+                if client != client_socket:
+                    client.send(message)
+            time.sleep(1)
 
 
-if __name__ == '__main__':
-    listen()
-    
+if __name__ == "__main__":
+    server = Server('127.0.0.1', 6555)

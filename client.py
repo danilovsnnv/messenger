@@ -11,23 +11,32 @@ class Client(App):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     main_layout = BoxLayout(orientation='vertical')
+    control_layout = BoxLayout(orientation='vertical')
     btn_layout = BoxLayout(orientation='horizontal')
     chat = TextInput(multiline=True, readonly=True, font_size=30)
     msg_input = TextInput(multiline=True, font_size=30)
-    send_button = Button(text='Отправить', pos_hint={"center_x": 0.5, "center_y": 0.5})
-    clear_button = Button(text='Очистить', pos_hint={"center_x": 0.5, "center_y": 0.5})
-    connect_button = Button(text='Подключиться', pos_hint={"center_x": 0.5, "center_y": 0.5})
+    send_button = Button(text='Отправить',
+                         pos_hint={"center_x": 0.5, "center_y": 0.5})
+    clear_button = Button(text='Очистить',
+                          pos_hint={"center_x": 0.5, "center_y": 0.5})
+    connect_button = Button(text='Подключиться',
+                            pos_hint={"center_x": 0.5, "center_y": 0.5})
 
     def build(self):
         self.main_layout.add_widget(self.chat)
-        self.main_layout.add_widget(self.msg_input)
+        self.control_layout.add_widget(self.msg_input)
+
         self.send_button.bind(on_press=self.send_message)
         self.btn_layout.add_widget(self.send_button)
+
         self.clear_button.bind(on_press=self.clear)
         self.btn_layout.add_widget(self.clear_button)
-        self.main_layout.add_widget(self.btn_layout)
+        self.control_layout.add_widget(self.btn_layout)
+
         self.connect_button.bind(on_press=self.connect_socket)
-        self.main_layout.add_widget(self.connect_button)
+        self.control_layout.add_widget(self.connect_button)
+
+        self.main_layout.add_widget(self.control_layout)
 
         return self.main_layout
 

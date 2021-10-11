@@ -22,7 +22,7 @@ class MainApp(App):
         self.btn_layout.add_widget(self.clear_button)
         self.main_layout.add_widget(self.btn_layout)
 
-        return self.main_layout
+
 
     def on_button_press(self, instance):
         current_text = self.msg_input.text

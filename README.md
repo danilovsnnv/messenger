@@ -7,3 +7,4 @@
 * Шифрование RSA и протокол Диффи-Хелламана
 * socket
 * Kivy
+* SQLAlchemy

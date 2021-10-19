@@ -1,0 +1,37 @@
+
+
+<ChatScreen>
+
+    chat_widget: chat
+    chat_input_widget: chat_input
+
+    TextInput:
+        id: chat
+        multiline: True
+        readonly: True
+        font_size: 25
+        size_hint_y: 0.8
+        pos_hint: {'center_x': 0.5, 'top': 1}
+
+    TextInput:
+        id: chat_input
+        multiline: True
+        font_size: 25
+        size_hint: 0.8, 0.1
+        pos_hint: {'left': 1, 'top': 0.2}
+
+    Button:
+        id: send_button
+        text: 'Отпр.'
+        background_color: 0, 0, 1, 1
+        size_hint: 0.2, 0.1
+        pos_hint: {'right': 1, 'top': 0.2}
+        on_press: root.send_message()
+
+    Button:
+        id: connect_button
+        text: 'Подключиться'
+        size_hint_y: 0.1
+        pos_hint: {'center_x': 0.5, 'top': 0.1}
+        on_press: root.connect_socket()
+

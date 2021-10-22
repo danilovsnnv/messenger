@@ -8,3 +8,12 @@
 * socket
 * Kivy
 * SQLAlchemy
+
+Схема авторизации
+
+![image](https://user-images.githubusercontent.com/52496357/138460788-c0dfec4c-656a-474a-ae7f-d32743afd585.png)
+
+
+Схема обмена сообщениями
+
+![image](https://user-images.githubusercontent.com/52496357/138459652-b4dd7dd8-57be-4461-a011-73f2f206e916.png)

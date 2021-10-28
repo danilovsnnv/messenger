@@ -1,37 +1,253 @@
+ScreenManagement:
+    StartScreen:
+    LoginScreen:
+    RegistrationScreen:
+    ChatScreen:
+
+
+<StartScreen>
+    name: 'start'
+
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        spacing: 10
+
+        ActionBar:
+            id: action
+            background_color: 0, 0, 1, 1
+            size_y: root.height * .1
+
+        Widget:
+            size_hint_y: .15
+
+        Image:
+            source: 'img/icon.png'
+            size_hint: .5, .5
+            pos_hint: {'center_x': .5, 'center_y': 1}
+
+        Label:
+            id: hello_text
+            halign: 'center'
+            text: 'Добро пожаловать в PyMessenger!\nЗдесь вы можете безопасно общаться с друзьями и близкими.\nДля начала, вам нужно войти в аккаунт или зарегистрироваться'
+            color: 0, 0, 0, 1
+            size_hint_y: .4
+
+        Button:
+            id: login_button
+            text: 'Вход'
+            size_hint: .4, .1
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            on_release: app.root.current = 'login'
+
+        Button:
+            id: registration_button
+            text: 'Регистрация'
+            background_color: 0, 0, 1, 1
+            size_hint: .4, .1
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            on_release: app.root.current = 'registration'
+
+
+        Widget:
+            size_hint_y: .1
+
+
+<LoginScreen>
+    name: 'login'
+
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        spacing: 10
+
+        ActionBar:
+            id: action
+            background_color: 0, 0, 1, 1
+            size_y: root.height * .1
+
+        Widget:
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 10
+            padding: 20
+
+            Label:
+                text: 'Имя пользователя'
+                text_size: self.size
+                halign: 'left'
+                color: 0, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            TextInput:
+                id: username
+                multiline: False
+                size_hint: .7, .15
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            Label:
+                text: 'Пароль'
+                text_size: self.size
+                halign: 'left'
+                color: 0, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            TextInput:
+                id: password
+                multiline: False
+                size_hint: .7, .15
+                pos_hint: {'left': .1, 'center_y': .5}
+
+        Widget:
+
+        BoxLayout:
+            orientation: 'horizontal'
+
+            Button:
+                id: next
+                text: 'Назад'
+                color: 0, 0, 0, 1
+                background_color: 0, 0, 0, 0
+                size_hint: .2, .1
+                on_press: app.root.current = 'start'
+
+            Button:
+                id: next
+                text: 'Далее'
+                color: 0, 0, .5, 1
+                background_color: 0, 0, 0, 0
+                size_hint: .2, .1
+                on_press: app.root.current = 'chat'
+
+
+<RegistrationScreen>
+    name: 'registration'
+
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        spacing: 10
+
+        ActionBar:
+            id: action
+            background_color: 0, 0, 1, 1
+            size_y: root.height * .1
+
+        Widget:
+            size_hint_y: .7
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 10
+            padding: 20
+
+            Label:
+                text: 'Придумайте имя пользователя'
+                text_size: self.size
+                halign: 'left'
+                color: 0, 0, 0, 1
+                size_hint: .7, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            TextInput:
+                id: username
+                multiline: False
+                size_hint: .7, .15
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            Label:
+                text: 'Введите пароль'
+                text_size: self.size
+                halign: 'left'
+                color: 0, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            TextInput:
+                id: password
+                multiline: False
+                size_hint: .7, .15
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            Label:
+                text: 'Повторите пароль'
+                text_size: self.size
+                halign: 'left'
+                color: 0, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
+            TextInput:
+                id: password
+                multiline: False
+                size_hint: .7, .15
+                pos_hint: {'left': .1, 'center_y': .5}
+
+        Widget:
+            size_hint_y: .1
+
+        BoxLayout:
+            orientation: 'horizontal'
+
+            Button:
+                id: next
+                text: 'Назад'
+                color: 0, 0, 0, 1
+                background_color: 0, 0, 0, 0
+                size_hint: .2, .1
+                on_press: app.root.current = 'start'
+
+            Button:
+                id: next
+                text: 'Далее'
+                color: 0, 0, .5, 1
+                background_color: 0, 0, 0, 0
+                size_hint: .2, .1
+                on_press: app.root.current = 'chat'
 
 
 <ChatScreen>
-
+    name: 'chat'
     chat_widget: chat
     chat_input_widget: chat_input
 
-    TextInput:
-        id: chat
-        multiline: True
-        readonly: True
-        font_size: 25
-        size_hint_y: 0.8
-        pos_hint: {'center_x': 0.5, 'top': 1}
+    FloatLayout:
+        ActionBar:
+            id: action
+            background_color: 0, 0, 1, 1
+            size_hint_y: 0.1
+            pos_hint: {'center_x': .5, 'top': 1}
 
-    TextInput:
-        id: chat_input
-        multiline: True
-        font_size: 25
-        size_hint: 0.8, 0.1
-        pos_hint: {'left': 1, 'top': 0.2}
+        TextInput:
+            id: chat
+            multiline: True
+            readonly: True
+            font_size: 25
+            size_hint_y: 0.7
+            pos_hint: {'center_x': .5, 'top': .9}
 
-    Button:
-        id: send_button
-        text: 'Отпр.'
-        background_color: 0, 0, 1, 1
-        size_hint: 0.2, 0.1
-        pos_hint: {'right': 1, 'top': 0.2}
-        on_press: root.send_message()
+        TextInput:
+            id: chat_input
+            multiline: True
+            font_size: 25
+            size_hint: .8, .1
+            pos_hint: {'left': 1, 'top': .2}
 
-    Button:
-        id: connect_button
-        text: 'Подключиться'
-        size_hint_y: 0.1
-        pos_hint: {'center_x': 0.5, 'top': 0.1}
-        on_press: root.connect_socket()
+        Button:
+            id: send_button
+            text: 'Отпр.'
+            background_color: 0, 0, 1, 1
+            size_hint: .2, .1
+            pos_hint: {'right': 1, 'top': .2}
+            on_press: app.send_message()
+
+        Button:
+            id: connect_button
+            text: 'Подключиться'
+            size_hint_y: .1
+            pos_hint: {'center_x': .5, 'top': .1}
+            on_press: root.connect_socket()
 

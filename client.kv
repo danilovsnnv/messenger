@@ -56,6 +56,9 @@ ScreenManagement:
 <LoginScreen>
     name: 'login'
 
+    login_widget: login
+    password_widget: password
+
     BoxLayout:
         orientation: 'vertical'
         size: root.width, root.height
@@ -82,7 +85,7 @@ ScreenManagement:
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
-                id: username
+                id: login
                 multiline: False
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
@@ -120,11 +123,14 @@ ScreenManagement:
                 color: 0, 0, .5, 1
                 background_color: 0, 0, 0, 0
                 size_hint: .2, .1
-                on_press: app.root.current = 'chat'
+                on_press: root.send_user_data()
 
 
 <RegistrationScreen>
     name: 'registration'
+    login_widget: login
+    password1_widget: password1
+    password2_widget: password2
 
     BoxLayout:
         orientation: 'vertical'
@@ -153,7 +159,7 @@ ScreenManagement:
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
-                id: username
+                id: login
                 multiline: False
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
@@ -167,7 +173,7 @@ ScreenManagement:
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
-                id: password
+                id: password1
                 multiline: False
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
@@ -181,7 +187,7 @@ ScreenManagement:
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
-                id: password
+                id: password2
                 multiline: False
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
@@ -206,8 +212,7 @@ ScreenManagement:
                 color: 0, 0, .5, 1
                 background_color: 0, 0, 0, 0
                 size_hint: .2, .1
-                on_press: app.root.current = 'chat'
-
+                on_press: root.check_user_data()
 
 <ChatScreen>
     name: 'chat'
@@ -242,7 +247,7 @@ ScreenManagement:
             background_color: 0, 0, 1, 1
             size_hint: .2, .1
             pos_hint: {'right': 1, 'top': .2}
-            on_press: app.send_message()
+            on_press: root.send_message()
 
         Button:
             id: connect_button

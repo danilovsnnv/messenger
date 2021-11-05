@@ -15,9 +15,9 @@ class Users(base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    user_name = Column(String(50), nullable=False)
+    user_name = Column(String(50), nullable=True)
     user_hash = Column(Integer, nullable=False, unique=True)
-    user_open_key = Column(Integer, nullable=False, unique=True)
+    user_open_key = Column(Integer, nullable=True, unique=True)
 
 
 if not os.path.exists(BDPATH):
@@ -25,10 +25,10 @@ if not os.path.exists(BDPATH):
     session.commit()
 
 
-def add_user(name: str, login: str, password: str):
-    user_hash = hash(login + password)
+def add_user(data):
+    user_hash = hash(data)
     if not has_user(user_hash):
-        session.add(Users(user_name=name, user_hash=user_hash, open_key=1))
+        session.add(Users(user_hash=user_hash))
         session.commit()
 
 
@@ -36,5 +36,5 @@ def has_user(user_hash: int) -> bool:
     return session.query(exists().where(Users.user_hash == user_hash)).scalar()
 
 
-def password_check(login: str, password: str):
-    return session.query(exists().where(Users.user_login == hash(login + password))).scalar()
+def check_user(data: str):
+    return session.query(exists().where(Users.user_hash == hash(data))).scalar()

@@ -58,6 +58,7 @@ ScreenManagement:
 
     login_widget: login
     password_widget: password
+    error_label_widget: error_label
 
     BoxLayout:
         orientation: 'vertical'
@@ -104,7 +105,17 @@ ScreenManagement:
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
 
+            Label:
+                id: error_label
+                text: ''
+                text_size: self.size
+                halign: 'left'
+                color: 1, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
         Widget:
+            size_hint_y: 0.5
 
         BoxLayout:
             orientation: 'horizontal'
@@ -125,12 +136,12 @@ ScreenManagement:
                 size_hint: .2, .1
                 on_press: root.send_user_data()
 
-
 <RegistrationScreen>
     name: 'registration'
     login_widget: login
     password1_widget: password1
     password2_widget: password2
+    error_label_widget: error_label
 
     BoxLayout:
         orientation: 'vertical'
@@ -192,8 +203,17 @@ ScreenManagement:
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
 
+            Label:
+                id: error_label
+                text: ''
+                text_size: self.size
+                halign: 'left'
+                color: 1, 0, 0, 1
+                size_hint: .5, .1
+                pos_hint: {'left': .1, 'center_y': .5}
+
         Widget:
-            size_hint_y: .1
+            size_hint_y: .05
 
         BoxLayout:
             orientation: 'horizontal'
@@ -212,7 +232,7 @@ ScreenManagement:
                 color: 0, 0, .5, 1
                 background_color: 0, 0, 0, 0
                 size_hint: .2, .1
-                on_press: root.check_user_data()
+                on_press: root.send_user_data()
 
 <ChatScreen>
     name: 'chat'
@@ -231,7 +251,7 @@ ScreenManagement:
             multiline: True
             readonly: True
             font_size: 25
-            size_hint_y: 0.7
+            size_hint_y: 0.8
             pos_hint: {'center_x': .5, 'top': .9}
 
         TextInput:
@@ -239,20 +259,13 @@ ScreenManagement:
             multiline: True
             font_size: 25
             size_hint: .8, .1
-            pos_hint: {'left': 1, 'top': .2}
+            pos_hint: {'left': 1, 'top': .1}
 
         Button:
             id: send_button
             text: 'Отпр.'
             background_color: 0, 0, 1, 1
             size_hint: .2, .1
-            pos_hint: {'right': 1, 'top': .2}
+            pos_hint: {'right': 1, 'top': .1}
             on_press: root.send_message()
-
-        Button:
-            id: connect_button
-            text: 'Подключиться'
-            size_hint_y: .1
-            pos_hint: {'center_x': .5, 'top': .1}
-            on_press: root.connect_socket()
 

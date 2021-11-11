@@ -28,14 +28,37 @@ class ClientApp(App):
         def send_user_data(self):
             if self.login_widget.text != '' and self.password_widget.text != '':
                 data = 'l' + str(self.login_widget.text) + str(self.password_widget.text)
+                s.send(self.login_widget.text.encode('utf-8'))
                 s.send(data.encode('utf-8'))
+                threading.Thread(target=self.accept_handler).start()
+            else:
+                self.error_label_widget.text = 'Проверьте введённые данные'
+
+        def accept_handler(self):
+            accept = s.recv(1024)
+            if bool(accept):
+                self.parent.current = 'chat'
+            else:
+                self.error_label_widget.text = 'Неверный логин или пароль'
 
     class RegistrationScreen(Screen):
         def send_user_data(self):
             if self.password1_widget.text == self.password2_widget.text and self.login_widget.text != '' \
                     and self.password1_widget.text != '':
                 data = 'r' + str(self.login_widget.text) + str(self.password1_widget.text)
+                s.send(self.login_widget.text.encode('utf-8'))
                 s.send(data.encode('utf-8'))
+                threading.Thread(target=self.accept_handler).start()
+
+            else:
+                self.error_label_widget.text = 'Проверьте введённые данные'
+
+        def accept_handler(self):
+            accept = s.recv(1024)
+            if bool(accept):
+                self.parent.current = 'chat'
+            else:
+                self.error_label_widget.text = 'Данный пользователь уже существует'
 
     class ChatScreen(Screen):
         def send_message(self):
@@ -43,12 +66,12 @@ class ClientApp(App):
             if current_text == '':
                 return
             self.chat_widget.text += '[Вы] ' + current_text + '\n'
-            self.s.send(('[Собеседник] ' + current_text).encode('utf-8'))
+            s.send(('[Собеседник] ' + current_text).encode('utf-8'))
             self.chat_input_widget.text = ''
 
         def listen(self, instance):
             while True:
-                msg = self.s.recv(1024)
+                msg = s.recv(1024)
                 self.chat_widget.text += msg.decode('utf-8') + '\n'
 
     def __init__(self, ip: str, port: int):
@@ -59,7 +82,6 @@ class ClientApp(App):
         global s
         try:
             s.connect((self.ip, self.port))
-            print(s)
         except Exception as e:
             print(e)
 

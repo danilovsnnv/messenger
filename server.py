@@ -10,12 +10,13 @@ class Server:
         self.ip = ip
         self.port = port
         self.members = []
-        self.adresa = []
+        self.addresses = []
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.ip, self.port))
         self.server.listen(0)
         threading.Thread(target=self.connect).start()
+
         print(f'Listening at {self.ip}:{self.port}')
 
     def connect(self):
@@ -23,24 +24,26 @@ class Server:
             client, address = self.server.accept()
             if client not in self.members:
                 self.members.append(client)
-                self.adresa.append(address)
+                self.addresses.append(address)
                 print(client)
                 threading.Thread(target=self.check_user_data, args=(client,)).start()
                 # client.send('Успешное подключение к чату!'.encode('utf-8'))
             time.sleep(1)
 
     def check_user_data(self, client_socket):
-        data = client_socket.recv(1024)
-        if data[0]== 'l':
-            accept = database.check_user(data[1::])
-            client_socket.send(accept.encode('utf-8'))
-            if accept:
-                threading.Thread(target=self.message_handler, args=(client_socket,)).start()
-            else:
-                threading.Thread(target=self.connect, args=(client_socket,)).start()
-        if data[0] == 'r':
-            database.add_user(data[1::])
+        username = str(client_socket.recv(1024))[2:-1]
+        data = str(client_socket.recv(1024))[2:-1]
+        if data[0] == 'l':
+            accept = database.has_user(username, data[1:])
+        elif data[0] == 'r':
+            accept = database.add_user(username, data[1:])
+        else:
+            accept = False
+        client_socket.send(str(accept).encode('utf-8'))
+        if accept:
             threading.Thread(target=self.message_handler, args=(client_socket,)).start()
+        else:
+            threading.Thread(target=self.check_user_data, args=(client_socket,)).start()
 
     def message_handler(self, client_socket):
         while True:

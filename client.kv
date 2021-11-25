@@ -71,6 +71,7 @@ ScreenManagement:
             size_y: root.height * .1
 
         Widget:
+            size_hint_y: 0.5
 
         BoxLayout:
             orientation: 'vertical'
@@ -82,7 +83,7 @@ ScreenManagement:
                 text_size: self.size
                 halign: 'left'
                 color: 0, 0, 0, 1
-                size_hint: .5, .1
+                size_hint: .5, .15
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
@@ -96,11 +97,12 @@ ScreenManagement:
                 text_size: self.size
                 halign: 'left'
                 color: 0, 0, 0, 1
-                size_hint: .5, .1
+                size_hint: .5, .15
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
                 id: password
+                password: True
                 multiline: False
                 size_hint: .7, .15
                 pos_hint: {'left': .1, 'center_y': .5}
@@ -111,7 +113,7 @@ ScreenManagement:
                 text_size: self.size
                 halign: 'left'
                 color: 1, 0, 0, 1
-                size_hint: .5, .1
+                size_hint: .5, .15
                 pos_hint: {'left': .1, 'center_y': .5}
 
         Widget:
@@ -154,7 +156,7 @@ ScreenManagement:
             size_y: root.height * .1
 
         Widget:
-            size_hint_y: .7
+            size_hint_y: .4
 
         BoxLayout:
             orientation: 'vertical'
@@ -166,27 +168,28 @@ ScreenManagement:
                 text_size: self.size
                 halign: 'left'
                 color: 0, 0, 0, 1
-                size_hint: .7, .1
+                size_hint_x: .7
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
                 id: login
                 multiline: False
-                size_hint: .7, .15
+                size_hint_x: .7
                 pos_hint: {'left': .1, 'center_y': .5}
 
             Label:
                 text: 'Введите пароль'
                 text_size: self.size
                 halign: 'left'
-                color: 0, 0, 0, 1
-                size_hint: .5, .1
+                color: 0, 0, 0, 15
+                size_hint_x: .5
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
                 id: password1
+                password: True
                 multiline: False
-                size_hint: .7, .15
+                size_hint_x: .7
                 pos_hint: {'left': .1, 'center_y': .5}
 
             Label:
@@ -194,13 +197,14 @@ ScreenManagement:
                 text_size: self.size
                 halign: 'left'
                 color: 0, 0, 0, 1
-                size_hint: .5, .1
+                size_hint_x: .5
                 pos_hint: {'left': .1, 'center_y': .5}
 
             TextInput:
                 id: password2
+                password: True
                 multiline: False
-                size_hint: .7, .15
+                size_hint_x: .7
                 pos_hint: {'left': .1, 'center_y': .5}
 
             Label:
@@ -208,12 +212,11 @@ ScreenManagement:
                 text: ''
                 text_size: self.size
                 halign: 'left'
+                valign: 'top'
                 color: 1, 0, 0, 1
-                size_hint: .5, .1
+                size_hint_x: .9
                 pos_hint: {'left': .1, 'center_y': .5}
 
-        Widget:
-            size_hint_y: .05
 
         BoxLayout:
             orientation: 'horizontal'

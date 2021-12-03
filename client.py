@@ -42,6 +42,7 @@ class LoginScreen(Screen):
         accept = str(s.recv(1024))[2:-1]
         if accept == 'True':
             self.parent.current = 'chat'
+            threading.Thread(target=self.parent.screens[-1].listen).start()
         else:
             self.error_label_widget.text = 'Неверный логин или пароль'
 
@@ -73,15 +74,19 @@ class RegistrationScreen(Screen):
 
 
 class ChatScreen(Screen):
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
     def send_message(self):
         current_text = self.chat_input_widget.text
         if current_text == '':
             return
         self.chat_widget.text += '[Вы] ' + current_text + '\n'
-        s.send(('[Собеседник] ' + current_text).encode('utf-8'))
         self.chat_input_widget.text = ''
+        s.send(('[Собеседник] ' + current_text).encode('utf-8'))
 
-    def listen(self, instance):
+    def listen(self):
         while True:
             msg = s.recv(1024)
             self.chat_widget.text += msg.decode('utf-8') + '\n'

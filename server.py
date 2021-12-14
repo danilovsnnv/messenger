@@ -4,6 +4,7 @@ import threading
 
 import database
 
+import rsa
 
 class Server:
     def __init__(self, ip, port):
@@ -28,12 +29,18 @@ class Server:
 
     def check_user_data(self, client_socket: socket.socket):
         """Проверка данных пользователей при входе и регистрации"""
-        username = str(client_socket.recv(1024))[2:-1]
-        data = str(client_socket.recv(1024))[2:-1]
+        pub_key_client_pem = client_socket.recv(1024)
+        (pubkey, privkey) = rsa.newkeys(1024)
+        client_socket.send(pubkey.save_pkcs1())
+
+        username_secret = client_socket.recv(1024)
+        data_secret = client_socket.recv(1024)
+        username = rsa.decrypt(username_secret, privkey).decode('utf-8')
+        data = rsa.decrypt(data_secret, privkey).decode('utf-8')
         if data[0] == 'l':
             accept = database.has_user(username, data[1:])
         elif data[0] == 'r':
-            accept = database.add_user(username, data[1:], "open_key_here")
+            accept = database.add_user(username, data[1:], pub_key_client_pem)
         else:
             accept = False
         client_socket.send(str(accept).encode('utf-8'))
@@ -46,7 +53,7 @@ class Server:
     def message_handler(self, client_socket: socket.socket):
         """Приём сообщений и их отправка в общий чат"""
         while True:
-            message = str(client_socket.recv(1024))[2:-1].split('&', 3)[1::]
+            message = client_socket.recv(1024).decode("utf-8").split('&', 3)[1::]
             receiver_socket = self.members_dict[message[0]]
             online = self.online_check(receiver_socket)
             if online:

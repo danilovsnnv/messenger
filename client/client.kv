@@ -3,6 +3,7 @@ ScreenManagement:
     ConnectionErrorScreen:
     LoginScreen:
     RegistrationScreen:
+    MessagesScreen:
     ChatScreen:
 
 
@@ -288,6 +289,36 @@ ScreenManagement:
                 size_hint: .2, .1
                 on_press: root.send_user_data()
 
+<MessagesScreen>
+    name: 'messages'
+    layout_widget: layout
+
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.width, root.height
+        spacing: 10
+
+        ActionBar:
+            id: action
+            background_color: 0, 0, 1, 1
+            size_y: root.height * .1
+
+        ScrollView:
+            do_scroll_y: True
+            do_scroll_x: False
+
+            GridLayout:
+                id: layout
+                cols: 1
+                size: (root.width, root.height)
+                size_hint_y: None
+                size_hint_x: None
+                height: self.minimum_height
+                row_default_height: 75
+                row_force_default: True
+                spacing: 10
+                padding: 20
+
 <ChatScreen>
     name: 'chat'
     chat_widget: chat
@@ -304,6 +335,7 @@ ScreenManagement:
                 ActionPrevious:
                     app_icon: 'img/action_icon.png'
                     title: 'Чат'
+                    on_press: app.root.current = 'messages'
 
         TextInput:
             id: chat
@@ -327,4 +359,3 @@ ScreenManagement:
             size_hint: .2, .1
             pos_hint: {'right': 1, 'top': .1}
             on_press: root.send_message()
-

@@ -4,14 +4,15 @@ import threading
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.button import Button
 
 from kivy.core.window import Window
 from kivy.config import Config
 
 import form_check
+import message_storage
 
 import rsa
-
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 
@@ -20,9 +21,11 @@ Window.title = 'Messenger'
 Window.clearcolor = (.85, .85, .85, 1)
 
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+SOCKET_CONNECTED = False
 IP = '127.0.0.1'
 PORT = 6555
 USERNAME = ''
+STORAGE = message_storage.MessageStorage()
 
 
 class ScreenManagement(ScreenManager):
@@ -30,20 +33,35 @@ class ScreenManagement(ScreenManager):
 
 
 class StartScreen(Screen):
+    """
+    Начальный экран, отображаемый при входе
+    """
+
     def check_socket(self, next_screen_name: str):
-        global SOCKET
-        try:
-            SOCKET.connect((IP, PORT))
+        global SOCKET, SOCKET_CONNECTED
+        if not SOCKET_CONNECTED:
+            try:
+                SOCKET.connect((IP, PORT))
+                SOCKET_CONNECTED = True
+                self.parent.current = next_screen_name
+            except WindowsError:
+                self.parent.current = 'connection_error'
+        else:
             self.parent.current = next_screen_name
-        except WindowsError:
-            self.parent.current = 'connection_error'
 
 
 class ConnectionErrorScreen(Screen):
+    """
+    Экран, выводящий ошибку при подключении к серверу
+    """
     pass
 
 
 class LoginScreen(Screen):
+    """
+    Экран входа в аккаунт
+    """
+
     def send_user_data(self):
         if form_check.check_login(self.login_widget.text) and form_check.check_password(self.password_widget.text):
             pub_key_file = open("pubkey.txt", "r")
@@ -63,13 +81,17 @@ class LoginScreen(Screen):
     def accept_handler(self):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
-            self.parent.current = 'chat'
-            threading.Thread(target=self.parent.screens[-1].listen).start()
+            self.manager.screens[-2].build_screen(STORAGE.get_users_list())
+            self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Неверный логин или пароль'
 
 
 class RegistrationScreen(Screen):
+    """
+    Экран регистрации
+    """
+
     def send_user_data(self):
         if form_check.check_login(self.login_widget.text):
             if form_check.check_password(self.password1_widget.text):
@@ -107,17 +129,37 @@ class RegistrationScreen(Screen):
     def accept_handler(self):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
-            self.parent.current = 'chat'
+            self.manager.screens[-2].build_screen(STORAGE.get_users_list())
+            self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Данный пользователь уже существует'
 
 
 class MessagesScreen(Screen):
-    def __init__(self, **kw):
-        super().__init__(**kw)
+    """
+    Экран выбора переписки
+    """
+    def build_screen(self, users: list):
+        for user in users:
+            button = Button(text=user, font_size=20)
+            button.bind(on_press=self.to_chat)
+            self.layout_widget.add_widget(button)
+
+    def to_chat(self, instance):
+        chat_screen = self.manager.screens[-1]
+        chat_screen.chat_widget.text = ''
+        messages = STORAGE.get_messages(instance.text)
+        for message in messages:
+            chat_screen.chat_widget.text += ('['+message[0]+'] ' + message[1] + '\n')
+        threading.Thread(target=chat_screen.listen)
+        self.manager.current = 'chat'
 
 
 class ChatScreen(Screen):
+    """
+    Экран переписки
+    """
+
     def send_message(self):
         current_text = self.chat_input_widget.text
         if current_text == '':
@@ -133,6 +175,9 @@ class ChatScreen(Screen):
 
 
 class ClientApp(App):
+    """
+    Класс клиента
+    """
 
     def __init__(self):
         super().__init__()

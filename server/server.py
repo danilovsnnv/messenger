@@ -6,6 +6,7 @@ import database
 
 import rsa
 
+
 class Server:
     def __init__(self, ip, port):
         self.ip = ip
@@ -51,20 +52,17 @@ class Server:
             threading.Thread(target=self.check_user_data, args=(client_socket,)).start()
 
     def message_handler(self, client_socket: socket.socket):
-        """Приём сообщений и их отправка в общий чат"""
+        """Приём сообщений и их отправка адресату"""
         while True:
             message = client_socket.recv(1024).decode("utf-8").split('&', 3)[1::]
-            receiver_socket = self.members_dict[message[0]]
+            receiver_socket = self.members_dict[message[1]]
             online = self.online_check(receiver_socket)
             if online:
-                receiver_socket.send(('&' + message[1] + '&' + message[2]).encode('utf-8'))
+                receiver_socket.send(('&' + message[0] + '&' + message[2]).encode('utf-8'))
+                print(('&' + message[0] + '&' + message[2]).encode('utf-8'))
                 database.add_message(message[0], message[1], message[2])
             else:
                 database.add_unreceived_message(message[0], message[1], message[2])
-
-            for client in self.members_dict.values():
-                if client != client_socket:
-                    client.send(message)
             time.sleep(1)
 
     @staticmethod

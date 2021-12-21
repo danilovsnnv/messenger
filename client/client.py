@@ -25,6 +25,7 @@ SOCKET_CONNECTED = False
 IP = '127.0.0.1'
 PORT = 6555
 USERNAME = ''
+CHAT_USERNAME = ''
 STORAGE = message_storage.MessageStorage()
 
 
@@ -64,6 +65,8 @@ class LoginScreen(Screen):
 
     def send_user_data(self):
         if form_check.check_login(self.login_widget.text) and form_check.check_password(self.password_widget.text):
+            global USERNAME
+            USERNAME = self.login_widget.text
             pub_key_file = open("pubkey.txt", "r")
             pubkey_pem = pub_key_file.read().encode("utf-8")
             pub_key_file.close()
@@ -96,6 +99,8 @@ class RegistrationScreen(Screen):
         if form_check.check_login(self.login_widget.text):
             if form_check.check_password(self.password1_widget.text):
                 if self.password1_widget.text == self.password2_widget.text:
+                    global USERNAME
+                    USERNAME = self.login_widget.text
                     # Создание ключей и запись их в файл
                     (pubkey, privkey) = rsa.newkeys(1024)
                     pubkey_pem = pubkey.save_pkcs1()  # (format='PEM')
@@ -139,6 +144,7 @@ class MessagesScreen(Screen):
     """
     Экран выбора переписки
     """
+
     def build_screen(self, users: list):
         for user in users:
             button = Button(text=user, font_size=20)
@@ -148,10 +154,12 @@ class MessagesScreen(Screen):
     def to_chat(self, instance):
         chat_screen = self.manager.screens[-1]
         chat_screen.chat_widget.text = ''
-        messages = STORAGE.get_messages(instance.text)
+        global CHAT_USERNAME
+        CHAT_USERNAME = instance.text
+        messages = STORAGE.get_messages(CHAT_USERNAME)
         for message in messages:
-            chat_screen.chat_widget.text += ('['+message[0]+'] ' + message[1] + '\n')
-        threading.Thread(target=chat_screen.listen)
+            chat_screen.chat_widget.text += ('[' + message[0] + '] ' + message[1] + '\n')
+        threading.Thread(target=chat_screen.listen).start()
         self.manager.current = 'chat'
 
 
@@ -162,16 +170,22 @@ class ChatScreen(Screen):
 
     def send_message(self):
         current_text = self.chat_input_widget.text
-        if current_text == '':
+        if form_check.check_empty_message(current_text):
             return
-        self.chat_widget.text += '[Вы] ' + current_text + '\n'
+        self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
+        STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text)
+        SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
+        print(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
         self.chat_input_widget.text = ''
-        SOCKET.send(('[Собеседник] ' + current_text).encode('utf-8'))
 
     def listen(self):
         while True:
-            msg = SOCKET.recv(1024)
-            self.chat_widget.text += msg.decode('utf-8') + '\n'
+            message = SOCKET.recv(1024).decode('utf-8').split('&', 2)[1::]
+            if message == ['']:
+                continue
+            STORAGE.add_message(message[0], message[0], message[1])
+            if message[0] == CHAT_USERNAME:
+                self.chat_widget.text += '[' + message[0] + '] ' + message[1] + '\n'
 
 
 class ClientApp(App):

@@ -233,7 +233,7 @@ ScreenManagement:
                 text: 'Введите пароль'
                 text_size: self.size
                 halign: 'left'
-                color: 0, 0, 0, 15
+                color: 0, 0, 0, 1
                 size_hint_x: .5
                 pos_hint: {'left': .1, 'center_y': .5}
 
@@ -292,16 +292,38 @@ ScreenManagement:
 <MessagesScreen>
     name: 'messages'
     layout_widget: layout
+    search_widget: search
 
     BoxLayout:
         orientation: 'vertical'
         size: root.width, root.height
         spacing: 10
 
+
         ActionBar:
             id: action
             background_color: 0, 0, 1, 1
             size_y: root.height * .1
+
+
+        GridLayout:
+            cols: 2
+            size_hint_y: .075
+            spacing: 5
+            padding: 5
+
+            TextInput:
+                id: search
+                size_hint_x: .7
+                font_size: 25
+                text_size: self.size
+                valign: 'center'
+
+            Button:
+                size_hint_x: .3
+                background_color: 0, 0, 1, 1
+                text: 'Поиск'
+                on_press: root.search_users()
 
         ScrollView:
             do_scroll_y: True
@@ -318,6 +340,11 @@ ScreenManagement:
                 row_force_default: True
                 spacing: 10
                 padding: 20
+
+<SearchScreen>
+    name: 'search'
+
+    GridLayout:
 
 <ChatScreen>
     name: 'chat'
@@ -339,11 +366,19 @@ ScreenManagement:
 
         TextInput:
             id: chat
+            size: (root.width, root.height)
+            size_hint_y: None
+            size_hint_x: None
             multiline: True
             readonly: True
             font_size: 25
+            size_hint_y: None
+            text_size: self.size
+            valign: 'bottom'
             size_hint_y: 0.8
             pos_hint: {'center_x': .5, 'top': .9}
+            scroll_y: 10
+
 
         TextInput:
             id: chat_input

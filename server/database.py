@@ -76,6 +76,16 @@ def has_user(username: str, data: str) -> bool:
                                         Users.hash == hash(data))).scalar()
 
 
+def get_users_list(username_part: str) -> list:
+    """
+    Поиск пользователей по логину или его части
+    :param username_part: Строка с логином
+    :return: Список пользователей или пустой список, если пользователи не были найдены или запрос слишком короткий
+    """
+    users = [user[0] for user in session.query(Users.username).filter(Users.username.ilike(username_part + '%')).all()]
+    return users
+
+
 def add_message(user_from: str, user_to: str, message: str, time=datetime.datetime.now()):
     """
     Добавление информации о сообщении в базу данных
@@ -106,8 +116,7 @@ def get_unreceived_message(username: str):
     :param username: Имя пользователя для поиска
     :return rec: Список сообщений
     """
-    rec = list(session.query(UnreceivedMessages.user_from, UnreceivedMessages.message).filter(
-        UnreceivedMessages.user_to == username).all())
+    rec = session.query(UnreceivedMessages).filter(UnreceivedMessages.user_to == username).all()
     session.query(UnreceivedMessages).filter(UnreceivedMessages.user_to == username).delete(synchronize_session='fetch')
     session.commit()
     return rec
@@ -117,7 +126,7 @@ def get_open_key(username: str) -> str:
     """
     Получает открытый ключ по логину пользователя
     :param username: Имя пользователя
-    :return: Открытый ключ пользователя 
+    :return: Открытый ключ пользователя
     """
     user = session.query(Users).filter_by(Users.username == username).one()
     return user.open_key

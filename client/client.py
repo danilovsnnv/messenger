@@ -4,7 +4,9 @@ import threading
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
+
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 
 from kivy.core.window import Window
 from kivy.config import Config
@@ -23,7 +25,7 @@ Window.clearcolor = (.85, .85, .85, 1)
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 SOCKET_CONNECTED = False
 IP = '127.0.0.1'
-PORT = 6555
+PORT = 5555
 USERNAME = ''
 CHAT_USERNAME = ''
 STORAGE = message_storage.MessageStorage()
@@ -84,7 +86,8 @@ class LoginScreen(Screen):
     def accept_handler(self):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
-            self.manager.screens[-2].build_screen(STORAGE.get_users_list())
+            threading.Thread(target=self.manager.screens[-1].listen).start()
+            self.manager.screens[-2].build_screen()
             self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Неверный логин или пароль'
@@ -134,7 +137,8 @@ class RegistrationScreen(Screen):
     def accept_handler(self):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
-            self.manager.screens[-2].build_screen(STORAGE.get_users_list())
+            threading.Thread(target=self.manager.screens[-1].listen).start()
+            self.manager.screens[-2].build_screen()
             self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Данный пользователь уже существует'
@@ -144,11 +148,23 @@ class MessagesScreen(Screen):
     """
     Экран выбора переписки
     """
+    in_search = False
+    is_empty = False
 
-    def build_screen(self, users: list):
+    def build_screen(self, instance=''):
+        self.in_search = False
+        self.delete_buttons()
+        users = STORAGE.get_users_list()
+        if not users:
+            label = Label(text='Сообщений пока нет. Найдите собеседника через поиск и начните первый чат!',
+                          text_size=self.size, halign='center', color=[0, 0, 0, 1],
+                          pos_hint={'center_x': .5, 'top': 1})
+            self.layout_widget.add_widget(label)
+            self.is_empty = True
+            return
+
         for user in users:
-            button = Button(text=user, font_size=20)
-            button.bind(on_press=self.to_chat)
+            button = Button(text=user, font_size=20, on_press=self.to_chat)
             self.layout_widget.add_widget(button)
 
     def to_chat(self, instance):
@@ -159,8 +175,49 @@ class MessagesScreen(Screen):
         messages = STORAGE.get_messages(CHAT_USERNAME)
         for message in messages:
             chat_screen.chat_widget.text += ('[' + message[0] + '] ' + message[1] + '\n')
-        threading.Thread(target=chat_screen.listen).start()
         self.manager.current = 'chat'
+
+    def search_users(self):
+        self.in_search = True
+        if len(self.search_widget.text) < 3:
+            self.rebuild([])
+        else:
+            SOCKET.send(('&search_users&' + self.search_widget.text).encode('utf-8'))
+
+    def rebuild(self, users):
+        self.delete_buttons()
+        exit_button = Button(text='Вернуться к перепискам', font_size=20, background_color=[0, 0, 1, 1],
+                             on_press=self.build_screen)
+        self.layout_widget.add_widget(exit_button)
+
+        if not users:
+            label = Label(text='Не найдено пользователей или запрос содержит меньше 3х символов',
+                          text_size=self.size, halign='center', color=[0, 0, 0, 1],
+                          pos_hint={'center_x': .5, 'top': 1})
+            self.layout_widget.add_widget(label)
+            return
+
+        for user in users:
+            if user[1:-1] == USERNAME:
+                continue
+            button = Button(text=user[1:-1], font_size=20, on_press=self.to_chat)
+            self.layout_widget.add_widget(button)
+
+    def add_chat(self, username: str):
+        if self.in_search:
+            return
+        if self.is_empty:
+            self.delete_buttons()
+        button = Button(text=username, font_size=20, on_press=self.to_chat)
+        self.layout_widget.add_widget(button)
+
+    def delete_buttons(self):
+        if self.layout_widget.children:
+            self.layout_widget.clear_widgets()
+
+
+class SearchScreen(Screen):
+    pass
 
 
 class ChatScreen(Screen):
@@ -173,9 +230,11 @@ class ChatScreen(Screen):
         if form_check.check_empty_message(current_text):
             return
         self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
-        STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text)
         SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
-        print(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
+        if STORAGE.contains_chat(CHAT_USERNAME):
+            STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text)
+        else:
+            STORAGE.add_message_in_new_chat(CHAT_USERNAME, USERNAME, current_text)
         self.chat_input_widget.text = ''
 
     def listen(self):
@@ -183,7 +242,14 @@ class ChatScreen(Screen):
             message = SOCKET.recv(1024).decode('utf-8').split('&', 2)[1::]
             if message == ['']:
                 continue
-            STORAGE.add_message(message[0], message[0], message[1])
+            if message[0] == 'search_result':
+                self.manager.screens[-2].rebuild(message[1][1:-1].replace(' ', '').split(','))
+                continue
+            if STORAGE.contains_chat(message[0]):
+                STORAGE.add_message(message[0], message[0], message[1])
+            else:
+                STORAGE.add_message_in_new_chat(message[0], message[0], message[1])
+                self.manager.screens[-2].add_chat(message[0])
             if message[0] == CHAT_USERNAME:
                 self.chat_widget.text += '[' + message[0] + '] ' + message[1] + '\n'
 

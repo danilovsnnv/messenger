@@ -7,6 +7,7 @@ class MessageStorage:
     """
     Локальное хранилище сообщений для клиента
     """
+
     def __init__(self):
         """
         Создание или чтение JSON файла, создание словаря
@@ -14,6 +15,7 @@ class MessageStorage:
         if not os.path.exists('messages.json'):
             self.json_file = open("messages.json", "w")
             self.messages_dict = {}
+            json.dump(self.messages_dict, self.json_file, indent=4)
         else:
             with open('messages.json', 'r') as self.json_file:
                 self.messages_dict = json.load(self.json_file)
@@ -39,8 +41,8 @@ class MessageStorage:
             :param text: Текст сообщения
         """
         self.messages_dict[new_chat] = [[user, text, str(datetime.datetime.now())]]
-        with open("messages.json", "w") as json_file:
-            json.dump(self.messages_dict, json_file, indent=4)
+        with open("messages.json", "w") as self.json_file:
+            json.dump(self.messages_dict, self.json_file, indent=4)
 
     def get_messages(self, username: str) -> dict:
         """
@@ -67,3 +69,9 @@ class MessageStorage:
         :return: True или False в зависимости от того, найден ли чат
         """
         return username in list(self.messages_dict)
+
+
+if __name__ == '__main__':
+    print(os.path.exists('messages.json'))
+    m = MessageStorage()
+    print(os.path.exists('messages.json'))

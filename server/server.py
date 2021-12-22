@@ -52,18 +52,30 @@ class Server:
             threading.Thread(target=self.check_user_data, args=(client_socket,)).start()
 
     def message_handler(self, client_socket: socket.socket):
-        """Приём сообщений и их отправка адресату"""
+        """Приём сообщений и их отправка в общий чат"""
         while True:
             message = client_socket.recv(1024).decode("utf-8").split('&', 3)[1::]
-            receiver_socket = self.members_dict[message[1]]
-            online = self.online_check(receiver_socket)
-            if online:
-                receiver_socket.send(('&' + message[0] + '&' + message[2]).encode('utf-8'))
-                print(('&' + message[0] + '&' + message[2]).encode('utf-8'))
-                database.add_message(message[0], message[1], message[2])
-            else:
+            if message[0] == 'search_users':
+                self.search_users(client_socket, message[1])
+                continue
+            try:
+                receiver_socket = self.members_dict[message[1]]
+                online = self.online_check(receiver_socket)
+                if online:
+                    receiver_socket.send(('&' + message[0] + '&' + message[2]).encode('utf-8'))
+                    print(('&' + message[0] + '&' + message[2]).encode('utf-8'))
+                    database.add_message(message[0], message[1], message[2])
+                else:
+                    database.add_unreceived_message(message[0], message[1], message[2])
+            except KeyError:
                 database.add_unreceived_message(message[0], message[1], message[2])
+
             time.sleep(1)
+
+    @staticmethod
+    def search_users(client_socket: socket.socket, username: str):
+        users = database.get_users_list(username)
+        client_socket.send(('&search_result&' + str(users)).encode('utf-8'))
 
     @staticmethod
     def online_check(client_socket: socket.socket) -> bool:
@@ -76,4 +88,4 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('127.0.0.1', 6555)
+    server = Server('127.0.0.1', 5555)

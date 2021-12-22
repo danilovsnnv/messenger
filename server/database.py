@@ -114,12 +114,15 @@ def get_unreceived_message(username: str):
     """
     Ищет неполучаенные сообщения для конкретного пользователя, удаляет их и возвращает
     :param username: Имя пользователя для поиска
-    :return rec: Список сообщений
+    :return: Список сообщений
     """
-    rec = session.query(UnreceivedMessages).filter(UnreceivedMessages.user_to == username).all()
+    messages = session.query(UnreceivedMessages).filter(UnreceivedMessages.user_to == username).all()
+    res = []
+    for message in messages:
+        res.append([message.user_from, message.message, message.time])
     session.query(UnreceivedMessages).filter(UnreceivedMessages.user_to == username).delete(synchronize_session='fetch')
     session.commit()
-    return rec
+    return res
 
 
 def get_open_key(username: str) -> str:
@@ -128,5 +131,5 @@ def get_open_key(username: str) -> str:
     :param username: Имя пользователя
     :return: Открытый ключ пользователя
     """
-    user = session.query(Users).filter_by(Users.username == username).one()
+    user = session.query(Users).filter_by(username=username).one()
     return user.open_key

@@ -69,9 +69,3 @@ class MessageStorage:
         :return: True или False в зависимости от того, найден ли чат
         """
         return username in list(self.messages_dict)
-
-
-if __name__ == '__main__':
-    print(os.path.exists('messages.json'))
-    m = MessageStorage()
-    print(os.path.exists('messages.json'))

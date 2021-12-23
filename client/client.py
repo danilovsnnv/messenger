@@ -25,7 +25,7 @@ Window.clearcolor = (.85, .85, .85, 1)
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 SOCKET_CONNECTED = False
 IP = '127.0.0.1'
-PORT = 5555
+PORT = 6666
 USERNAME = ''
 CHAT_USERNAME = ''
 STORAGE = message_storage.MessageStorage()
@@ -87,8 +87,6 @@ class LoginScreen(Screen):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
             threading.Thread(target=self.manager.screens[-1].listen).start()
-            self.manager.screens[-2].build_screen()
-            self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Неверный логин или пароль'
 
@@ -138,8 +136,6 @@ class RegistrationScreen(Screen):
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
             threading.Thread(target=self.manager.screens[-1].listen).start()
-            self.manager.screens[-2].build_screen()
-            self.manager.current = 'messages'
         else:
             self.error_label_widget.text = 'Данный пользователь уже существует'
 
@@ -198,9 +194,9 @@ class MessagesScreen(Screen):
             return
 
         for user in users:
-            if user[1:-1] == USERNAME:
+            if user == USERNAME:
                 continue
-            button = Button(text=user[1:-1], font_size=20, on_press=self.to_chat)
+            button = Button(text=user, font_size=20, on_press=self.to_chat)
             self.layout_widget.add_widget(button)
 
     def add_chat(self, username: str):
@@ -243,8 +239,14 @@ class ChatScreen(Screen):
             if message == ['']:
                 continue
             if message[0] == 'search_result':
-                self.manager.screens[-2].rebuild(message[1][1:-1].replace(' ', '').split(','))
+                self.manager.screens[-2].rebuild(message[1].split('==&==')[1::])
                 continue
+            if message[0] == 'unreceived_messages':
+                STORAGE.update_storage(message[1].split('==&==')[1::])
+                self.manager.screens[-2].build_screen()
+                self.manager.current = 'messages'
+                continue
+
             if STORAGE.contains_chat(message[0]):
                 STORAGE.add_message(message[0], message[0], message[1])
             else:

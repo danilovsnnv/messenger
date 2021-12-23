@@ -25,7 +25,7 @@ class Server:
         while True:
             client, address = self.server.accept()
             print(f'Connected: {client}')
-            threading.Thread(target=self.check_user_data, args=(client,)).start()
+            self.check_user_data(client)
             time.sleep(1)
 
     def check_user_data(self, client_socket: socket.socket):
@@ -48,6 +48,7 @@ class Server:
         if accept:
             threading.Thread(target=self.message_handler, args=(client_socket,)).start()
             self.members_dict[username] = client_socket
+            self.send_unreceived_messages(client_socket, username)
         else:
             threading.Thread(target=self.check_user_data, args=(client_socket,)).start()
 
@@ -73,9 +74,14 @@ class Server:
             time.sleep(1)
 
     @staticmethod
+    def send_unreceived_messages(client_socket: socket.socket, username: str):
+        messages = database.get_unreceived_message(username)
+        client_socket.send(('&unreceived_messages&' + str(messages)).encode('utf-8'))
+
+    @staticmethod
     def search_users(client_socket: socket.socket, username: str):
         users = database.get_users_list(username)
-        client_socket.send(('&search_result&' + str(users)).encode('utf-8'))
+        client_socket.send(('&search_result&' + users).encode('utf-8'))
 
     @staticmethod
     def online_check(client_socket: socket.socket) -> bool:
@@ -88,4 +94,4 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('127.0.0.1', 5555)
+    server = Server('127.0.0.1', 6666)

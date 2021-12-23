@@ -72,19 +72,19 @@ class MessageStorage:
         """
         return username in list(self.messages_dict)
 
-    def update_storage(self, messages_list: str):
+    def update_storage(self, messages: list):
         """
         Добавляет в хранилище новые неполученные сообщения
-        :param messages_list: Строка с сообщениями
+        :param messages: Список с сообщениями
         """
-        if messages_list == ['']:
+        if messages == ['']:
             return
-        while messages_list:
-            if self.contains_chat(messages_list[0]):
-                self.add_message(messages_list[0], messages_list[0], messages_list[1],
-                                 messages_list[2])
+        while messages:
+            if self.contains_chat(messages[0]):
+                self.add_message(messages[0], messages[0], messages[1],
+                                 messages[2])
             else:
-                self.add_message_in_new_chat(messages_list[0], messages_list[0], messages_list[1],
-                                             messages_list[2])
+                self.add_message_in_new_chat(messages[0], messages[0], messages[1],
+                                             messages[2])
 
-            del messages_list[0:3]
+            del messages[0:3]

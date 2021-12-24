@@ -34,4 +34,4 @@ def check_empty_message(msg: str):
     :param msg: Сообщение для проверки
     :return: True или False, в зависимости от того, пустое сообщение или нет
     """
-    return msg == '' or msg.isspace() or msg == '\n'
+    return msg == '' or msg.isspace() or msg == '\n' or '==!==' in msg or '==&==' is msg or '==%==' in msg

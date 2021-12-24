@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from sqlalchemy import create_engine, Integer, String, Column, ForeignKey, DateTime, Boolean, exists
+from sqlalchemy import create_engine, Integer, String, Column, ForeignKey, DateTime, Boolean, LargeBinary, exists
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.session import sessionmaker
 
@@ -28,7 +28,7 @@ class Messages(base):
     user_from = Column(String(32), ForeignKey('users.username'))
     user_to = Column(String(32), ForeignKey('users.username'))
     time = Column(DateTime, nullable=False)
-    message = Column(String, nullable=False)
+    message = Column(LargeBinary, nullable=False)
     unreceived = Column(Boolean, nullable=False)
 
 
@@ -40,12 +40,12 @@ if not os.path.exists(BDPATH):
 def add_user(username: str, data: str, key: str) -> bool:
     """
     Поиск пользователя в базе данных
-         :param username: Имя пользователя
-         :param data: Строка логин + пароль
-         :param key: Открытый RSA ключ
+    :param username: Имя пользователя
+    :param data: Строка логин + пароль
+    :param key: Открытый RSA ключ
 
-         :return True: Пользователь существует в базе данных
-         :return False: Пользователя нет или введены неверные данные
+    :return True: Пользователь существует в базе данных
+    :return False: Пользователя нет или введены неверные данные
     """
     user_exists = has_user(username, data)
     if not user_exists:
@@ -81,7 +81,7 @@ def get_users_list(username_part: str) -> str:
     return users_str
 
 
-def add_message(user_from: str, user_to: str, message: str, unreceived: bool, time=None):
+def add_message(user_from: str, user_to: str, message: bytes, unreceived: bool, time=None):
     """
     Добавление информации о сообщении в базу данных
         :param user_from: Имя пользователя-отправителя
@@ -96,20 +96,19 @@ def add_message(user_from: str, user_to: str, message: str, unreceived: bool, ti
     session.commit()
 
 
-def get_messages(username: str):
+def get_messages(username: str) -> bytes:
     """
     Ищет неполучаенные сообщения для конкретного пользователя, удаляет их и возвращает
     :param username: Имя пользователя для поиска
-    :return: Список сообщений
+    :return: Список сообщений в байтовом виде
     """
-    messages = session.query(Messages).filter(Messages.user_to == username).all()
-    message_str = ''
+    messages = session.query(Messages).filter(Messages.user_to == username, Messages.unreceived).all()
+    message_byte = ''.encode("utf-8")
     for message in messages:
-        message_str += '==&==' + str(message.user_from) + '==&==' + str(message.message) + '==&==' \
-                       + str(message.time) + '==&==' + str(message.unreceived)
-        message.unreceived = False
+        message_byte += ('==@==' + str(message.user_from) + '==@==').encode("utf-8") + message.message + (
+                    '==@==' + str(message.time)).encode("utf-8")
     session.commit()
-    return message_str
+    return message_byte
 
 
 def get_open_key(username: str) -> str:

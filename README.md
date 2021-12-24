@@ -16,5 +16,5 @@
 
 
 Схема обмена сообщениями
+![image](https://user-images.githubusercontent.com/52496357/147342534-46634b5e-4972-41e1-a6bf-16a4f9c9090b.png)
 
-![image](https://user-images.githubusercontent.com/52496357/138459652-b4dd7dd8-57be-4461-a011-73f2f206e916.png)

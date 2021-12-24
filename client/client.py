@@ -111,7 +111,7 @@ class RegistrationScreen(Screen):
 
     def send_user_data(self):
         """
-        Отправка данных пользователя для регистрации
+        Отправка данных пользователя при регистрации
         """
         if form_check.check_login(self.login_widget.text):
             if form_check.check_password(self.password1_widget.text):
@@ -123,9 +123,9 @@ class RegistrationScreen(Screen):
                     pubkey_pem = pubkey.save_pkcs1()  # (format='PEM')
                     privkey_pem = privkey.save_pkcs1()
                     pub_key_file = open("pubkey.txt", "w")
-                    pub_key_file.write(str(pubkey_pem))
+                    pub_key_file.write(pubkey_pem.decode('utf-8'))
                     priv_key_file = open("privkey.txt", "w")
-                    priv_key_file.write(str(privkey_pem))
+                    priv_key_file.write(privkey_pem.decode('utf-8'))
                     pub_key_file.close()
                     priv_key_file.close()
                     # Конец создания ключей
@@ -187,15 +187,11 @@ class MessagesScreen(Screen):
             self.layout_widget.add_widget(button)
 
     def to_chat(self, instance):
-        """
-        Переход к чату с выбранным пользователем
-        :param instance: Имя пользователя, получаемое из текста кнопки
-        """
         chat_screen = self.manager.screens[-1]
         chat_screen.chat_widget.text = ''
         global CHAT_USERNAME
         CHAT_USERNAME = instance.text
-        chat_screen.action_username_widget.title = CHAT_USERNAME
+        chat_screen.action_text_widget.title = CHAT_USERNAME
         messages = STORAGE.get_messages(CHAT_USERNAME)
         for message in messages:
             chat_screen.chat_widget.text += ('[' + message[0] + '] ' + message[1] + '\n')
@@ -206,7 +202,7 @@ class MessagesScreen(Screen):
         """
         Возвращает цвет для кнопки, в зависимости от того, есть ли новые сообщения в чате
         :param username: Имя пользователя для проверки
-        :return:
+        :return: Список с цветом кнопки
         """
         if STORAGE.has_unread(username):
             return [0, 0, 1, 1]
@@ -222,7 +218,7 @@ class MessagesScreen(Screen):
         else:
             SOCKET.send(('&search_users&' + self.search_widget.text).encode('utf-8'))
 
-    def rebuild(self, users: list):
+    def rebuild(self, users):
         """
         Переработка экрана переписок под результаты поиска
         :param users: Список найденных пользователей
@@ -261,51 +257,84 @@ class MessagesScreen(Screen):
             self.layout_widget.clear_widgets()
 
 
+class SearchScreen(Screen):
+    pass
+
+
 class ChatScreen(Screen):
     """
     Экран переписки
     """
-
     def send_message(self):
         """
-        Отправка сообщений
+        Отправка запроса ключа
         """
-        current_text = self.chat_input_widget.text
-        if form_check.check_empty_message(current_text):
-            return
-        self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
-        # Отправка сообщения с текстом из виджета
-        SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
-        STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text, False)
-        self.chat_input_widget.text = ''
+        SOCKET.send(("&get_keys&" + CHAT_USERNAME).encode('utf-8'))
 
     def listen(self):
         """
-        Функция запускатся из потока для приёма и обработки сообщений
+        Получение сообщений, запускается из потока
         """
+        priv_key_file = open("privkey.txt", "r")
+        privkey_pem = priv_key_file.read()
+        privkey = rsa.PrivateKey.load_pkcs1(privkey_pem, "PEM")
         while True:
-            # Приём и парсинг сообщения
-            message = SOCKET.recv(1024).decode('utf-8').split('&', 2)[1::]
+            # Получение сообщения
+            message = SOCKET.recv(2048)
+            try:
+                # Попытка расшифровать как сообщение
+                [message, secret_data1] = message.split(sep="==%==".encode('utf-8'))
+            except ValueError:
+                pass
+            try:
+                # Попытка рассшифровать как список сообщений для синхронизации
+                [message, all_messages] = message.split(sep="==!==".encode('utf-8'))
+            except ValueError:
+                pass
+            # Перевод в стркоу и парсинг
+            message = message.decode('utf-8').split('&', 2)[1::]
             if message == ['']:
                 continue
-            if message[0] == 'search_result':
-                # Если был получен результат поиска. Происходит изменение кнопок в экране переписок
-                self.manager.screens[-2].rebuild(message[1].split('==&==')[1::])
-                continue
-            if message[0] == 'synchronize_messages':
-                # Если были получены сообщения после синхронизации, то обновляется хранилище и экран меняется
-                # После логина сервер отправляет сообщения пользователю для синхронизации.
-                STORAGE.update_storage(message[1].split('==&==')[1::])
-                self.manager.screens[-2].build_screen()
-                self.manager.current = 'messages'
-                continue
-            if message[0] == CHAT_USERNAME:
-                # Если принято обычное сообщение. Происходит обновление хранилища и обновление списка чатов
-                self.chat_widget.text += '[' + message[0] + '] ' + message[1] + '\n'
-                STORAGE.add_message(message[0], message[0], message[1], False)
+            if message[0] == 'key':
+                # Если пришёл ключ
+                chat_pybkey_pem = message[1]
+                chat_pubkey = rsa.PublicKey.load_pkcs1(chat_pybkey_pem, "PEM")
+                current_text = self.chat_input_widget.text
+                # Проверка на то, пустое ли сообщение
+                if form_check.check_empty_message(current_text):
+                    return
+                self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
+                secret_data = rsa.encrypt(current_text.encode('utf-8'), chat_pubkey)
+                SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '==%==').encode('utf-8')+secret_data)
+                STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text, 'False')
+                self.chat_input_widget.text = ''
             else:
-                STORAGE.add_message(message[0], message[0], message[1], True)
-            self.manager.screens[-2].update_chats()
+                # Если пришёл список пользователей для поиска
+                if message[0] == 'search_result':
+                    self.manager.screens[-2].rebuild(message[1].split('==&==')[1::])
+                    continue
+                # Если пришли непрочитанные сообщения после входа
+                if message[0] == 'unreceived_messages':
+                    all_messages_array = all_messages.split(sep='==@=='.encode('utf-8'))[1::]
+                    for i in range(len(all_messages_array)):
+                        if i % 3 == 0 or i % 3 == 2:
+                            all_messages_array[i] = all_messages_array[i].decode('utf-8')
+                        if i % 3 == 1:
+                            all_messages_array[i] = rsa.decrypt(all_messages_array[i], privkey).decode('utf-8')
+                    STORAGE.update_storage(all_messages_array)
+                    self.manager.screens[-2].build_screen()
+                    self.manager.current = 'messages'
+                    continue
+                # Если принято обычное сообщение. Происходит обновление хранилища и обновление списка чатов
+                decrypted_message = rsa.decrypt(secret_data1, privkey).decode('utf-8')
+                if message[0] == CHAT_USERNAME:
+                    # Если сообщение от текущего собеседника
+                    self.chat_widget.text += '[' + message[0] + '] ' + decrypted_message + '\n'
+                    STORAGE.add_message(message[0], message[0], decrypted_message, 'False')
+                else:
+                    # Если соощение от другого собеседника
+                    STORAGE.add_message(message[0], message[0], decrypted_message, 'True')
+                self.manager.screens[-2].update_chats()
 
     def back(self):
         """
@@ -322,7 +351,6 @@ class ClientApp(App):
     """
     Класс клиента
     """
-
     def __init__(self):
         super().__init__()
         self.build_kv = Builder.load_file('client.kv')

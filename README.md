@@ -10,6 +10,10 @@
 * SQLAlchemy
 * JSON
 
+Схема регистрации
+
+![image](https://user-images.githubusercontent.com/52496357/147344985-f4794c14-c49b-422a-896e-3cc80f1a1e0a.png)
+
 Схема авторизации
 
 ![image](https://user-images.githubusercontent.com/52496357/147343290-bac6dc85-fee9-4e72-a371-a7f79c8b1ad6.png)

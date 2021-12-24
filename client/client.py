@@ -20,7 +20,7 @@ Config.set('kivy', 'keyboard_mode', 'systemanddock')
 
 Window.size = (480, 853)
 Window.title = 'Messenger'
-Window.clearcolor = (.85, .85, .85, 1)
+Window.clearcolor = (.9, .9, .9, 1)
 
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 SOCKET_CONNECTED = False
@@ -160,7 +160,8 @@ class MessagesScreen(Screen):
             return
 
         for user in users:
-            button = Button(text=user, font_size=20, on_press=self.to_chat)
+            button = Button(text=user, font_size=20, on_press=self.to_chat,
+                            background_color=self.get_button_color(user))
             self.layout_widget.add_widget(button)
 
     def to_chat(self, instance):
@@ -168,10 +169,17 @@ class MessagesScreen(Screen):
         chat_screen.chat_widget.text = ''
         global CHAT_USERNAME
         CHAT_USERNAME = instance.text
+        chat_screen.action_username_widget.title = CHAT_USERNAME
         messages = STORAGE.get_messages(CHAT_USERNAME)
         for message in messages:
             chat_screen.chat_widget.text += ('[' + message[0] + '] ' + message[1] + '\n')
         self.manager.current = 'chat'
+
+    @staticmethod
+    def get_button_color(username):
+        if STORAGE.has_unread(username):
+            return [0, 0, 1, 1]
+        return [1, 1, 1, 1]
 
     def search_users(self):
         self.in_search = True
@@ -199,21 +207,14 @@ class MessagesScreen(Screen):
             button = Button(text=user, font_size=20, on_press=self.to_chat)
             self.layout_widget.add_widget(button)
 
-    def add_chat(self, username: str):
+    def update_chats(self):
         if self.in_search:
             return
-        if self.is_empty:
-            self.delete_buttons()
-        button = Button(text=username, font_size=20, on_press=self.to_chat)
-        self.layout_widget.add_widget(button)
+        self.build_screen()
 
     def delete_buttons(self):
         if self.layout_widget.children:
             self.layout_widget.clear_widgets()
-
-
-class SearchScreen(Screen):
-    pass
 
 
 class ChatScreen(Screen):
@@ -227,10 +228,7 @@ class ChatScreen(Screen):
             return
         self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
         SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
-        if STORAGE.contains_chat(CHAT_USERNAME):
-            STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text)
-        else:
-            STORAGE.add_message_in_new_chat(CHAT_USERNAME, USERNAME, current_text)
+        STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text, False)
         self.chat_input_widget.text = ''
 
     def listen(self):
@@ -241,19 +239,24 @@ class ChatScreen(Screen):
             if message[0] == 'search_result':
                 self.manager.screens[-2].rebuild(message[1].split('==&==')[1::])
                 continue
-            if message[0] == 'unreceived_messages':
+            if message[0] == 'synchronize_messages':
                 STORAGE.update_storage(message[1].split('==&==')[1::])
                 self.manager.screens[-2].build_screen()
                 self.manager.current = 'messages'
                 continue
-
-            if STORAGE.contains_chat(message[0]):
-                STORAGE.add_message(message[0], message[0], message[1])
-            else:
-                STORAGE.add_message_in_new_chat(message[0], message[0], message[1])
-                self.manager.screens[-2].add_chat(message[0])
             if message[0] == CHAT_USERNAME:
                 self.chat_widget.text += '[' + message[0] + '] ' + message[1] + '\n'
+                STORAGE.add_message(message[0], message[0], message[1], False)
+            else:
+                STORAGE.add_message(message[0], message[0], message[1], True)
+            self.manager.screens[-2].update_chats()
+
+    def back(self):
+        global CHAT_USERNAME
+        CHAT_USERNAME = ''
+        self.chat_input_widget.text = ''
+        self.manager.screens[-2].build_screen()
+        self.manager.current = 'messages'
 
 
 class ClientApp(App):

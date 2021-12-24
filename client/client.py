@@ -22,16 +22,19 @@ Window.size = (480, 853)
 Window.title = 'Messenger'
 Window.clearcolor = (.9, .9, .9, 1)
 
-SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-SOCKET_CONNECTED = False
-IP = '127.0.0.1'
-PORT = 6666
-USERNAME = ''
-CHAT_USERNAME = ''
-STORAGE = message_storage.MessageStorage()
+SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Сокет пользователя
+SOCKET_CONNECTED = False  # Статус подключения сокета
+IP = '127.0.0.1'  # Ip клиента
+PORT = 6666  # Порт клиента
+USERNAME = ''  # Имя пользователя
+CHAT_USERNAME = ''  # Имя пользователя, с которым ведётся переписка
+STORAGE = message_storage.MessageStorage()  # Объект локального хранилища сообщений
 
 
 class ScreenManagement(ScreenManager):
+    """
+    Менеджер экранов
+    """
     pass
 
 
@@ -41,6 +44,10 @@ class StartScreen(Screen):
     """
 
     def check_socket(self, next_screen_name: str):
+        """
+        Проверка подключения к серверу
+        :param next_screen_name: Имя экрана для перехода
+        """
         global SOCKET, SOCKET_CONNECTED
         if not SOCKET_CONNECTED:
             try:
@@ -66,6 +73,9 @@ class LoginScreen(Screen):
     """
 
     def send_user_data(self):
+        """
+        Отправка данных пользователя для входа
+        """
         if form_check.check_login(self.login_widget.text) and form_check.check_password(self.password_widget.text):
             global USERNAME
             USERNAME = self.login_widget.text
@@ -84,6 +94,9 @@ class LoginScreen(Screen):
             self.error_label_widget.text = 'Проверьте введённые данные'
 
     def accept_handler(self):
+        """
+        Приём подтверждения для входа
+        """
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
             threading.Thread(target=self.manager.screens[-1].listen).start()
@@ -97,6 +110,9 @@ class RegistrationScreen(Screen):
     """
 
     def send_user_data(self):
+        """
+        Отправка данных пользователя для регистрации
+        """
         if form_check.check_login(self.login_widget.text):
             if form_check.check_password(self.password1_widget.text):
                 if self.password1_widget.text == self.password2_widget.text:
@@ -133,6 +149,9 @@ class RegistrationScreen(Screen):
                                            'содержать не более 32 символов и не содержать спецсимволов'
 
     def accept_handler(self):
+        """
+        Приём подтверждения для регистрации
+        """
         accept = SOCKET.recv(1024).decode("utf-8")
         if accept == 'True':
             threading.Thread(target=self.manager.screens[-1].listen).start()
@@ -144,10 +163,13 @@ class MessagesScreen(Screen):
     """
     Экран выбора переписки
     """
-    in_search = False
-    is_empty = False
+    in_search = False  # Производится ли поиск
+    is_empty = False  # Есть ли чаты
 
     def build_screen(self, instance=''):
+        """
+        Создание экрана переписок, добавление кнопок с чатами
+        """
         self.in_search = False
         self.delete_buttons()
         users = STORAGE.get_users_list()
@@ -165,6 +187,10 @@ class MessagesScreen(Screen):
             self.layout_widget.add_widget(button)
 
     def to_chat(self, instance):
+        """
+        Переход к чату с выбранным пользователем
+        :param instance: Имя пользователя, получаемое из текста кнопки
+        """
         chat_screen = self.manager.screens[-1]
         chat_screen.chat_widget.text = ''
         global CHAT_USERNAME
@@ -176,19 +202,31 @@ class MessagesScreen(Screen):
         self.manager.current = 'chat'
 
     @staticmethod
-    def get_button_color(username):
+    def get_button_color(username: str) -> list:
+        """
+        Возвращает цвет для кнопки, в зависимости от того, есть ли новые сообщения в чате
+        :param username: Имя пользователя для проверки
+        :return:
+        """
         if STORAGE.has_unread(username):
             return [0, 0, 1, 1]
         return [1, 1, 1, 1]
 
     def search_users(self):
+        """
+        Осуществление поиска по пользователям
+        """
         self.in_search = True
         if len(self.search_widget.text) < 3:
             self.rebuild([])
         else:
             SOCKET.send(('&search_users&' + self.search_widget.text).encode('utf-8'))
 
-    def rebuild(self, users):
+    def rebuild(self, users: list):
+        """
+        Переработка экрана переписок под результаты поиска
+        :param users: Список найденных пользователей
+        """
         self.delete_buttons()
         exit_button = Button(text='Вернуться к перепискам', font_size=20, background_color=[0, 0, 1, 1],
                              on_press=self.build_screen)
@@ -208,11 +246,17 @@ class MessagesScreen(Screen):
             self.layout_widget.add_widget(button)
 
     def update_chats(self):
+        """
+        Обновить список чатов
+        """
         if self.in_search:
             return
         self.build_screen()
 
     def delete_buttons(self):
+        """
+        Удалить кнопки с экрана чатов
+        """
         if self.layout_widget.children:
             self.layout_widget.clear_widgets()
 
@@ -223,28 +267,40 @@ class ChatScreen(Screen):
     """
 
     def send_message(self):
+        """
+        Отправка сообщений
+        """
         current_text = self.chat_input_widget.text
         if form_check.check_empty_message(current_text):
             return
         self.chat_widget.text += '[' + USERNAME + '] ' + current_text + '\n'
+        # Отправка сообщения с текстом из виджета
         SOCKET.send(('&' + USERNAME + '&' + CHAT_USERNAME + '&' + current_text).encode('utf-8'))
         STORAGE.add_message(CHAT_USERNAME, USERNAME, current_text, False)
         self.chat_input_widget.text = ''
 
     def listen(self):
+        """
+        Функция запускатся из потока для приёма и обработки сообщений
+        """
         while True:
+            # Приём и парсинг сообщения
             message = SOCKET.recv(1024).decode('utf-8').split('&', 2)[1::]
             if message == ['']:
                 continue
             if message[0] == 'search_result':
+                # Если был получен результат поиска. Происходит изменение кнопок в экране переписок
                 self.manager.screens[-2].rebuild(message[1].split('==&==')[1::])
                 continue
             if message[0] == 'synchronize_messages':
+                # Если были получены сообщения после синхронизации, то обновляется хранилище и экран меняется
+                # После логина сервер отправляет сообщения пользователю для синхронизации.
                 STORAGE.update_storage(message[1].split('==&==')[1::])
                 self.manager.screens[-2].build_screen()
                 self.manager.current = 'messages'
                 continue
             if message[0] == CHAT_USERNAME:
+                # Если принято обычное сообщение. Происходит обновление хранилища и обновление списка чатов
                 self.chat_widget.text += '[' + message[0] + '] ' + message[1] + '\n'
                 STORAGE.add_message(message[0], message[0], message[1], False)
             else:
@@ -252,6 +308,9 @@ class ChatScreen(Screen):
             self.manager.screens[-2].update_chats()
 
     def back(self):
+        """
+        Возвращение к экрану чатов
+        """
         global CHAT_USERNAME
         CHAT_USERNAME = ''
         self.chat_input_widget.text = ''

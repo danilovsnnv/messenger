@@ -18,3 +18,6 @@
 
 ![image](https://user-images.githubusercontent.com/52496357/147343473-3e404bf1-b103-4437-aea5-eb317aba39ce.png)
 
+Схема синхронизации 
+
+![image](https://user-images.githubusercontent.com/52496357/147344217-23cf429f-9e2c-47b1-9a7a-a4f19f1e3a9b.png)

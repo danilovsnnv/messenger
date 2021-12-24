@@ -1,4 +1,5 @@
 import json
+import os
 import datetime
 
 
@@ -11,9 +12,13 @@ class MessageStorage:
         """
         Создание или чтение JSON файла, создание словаря
         """
-        with open("messages.json", "w") as self.json_file:
-            self.messages_dict = {}
-            json.dump({}, self.json_file, indent=4)
+        if not os.path.exists('messages.json'):
+            with open("messages.json", "w") as self.json_file:
+                self.messages_dict = {}
+                json.dump(self.messages_dict, self.json_file, indent=4)
+        else:
+            with open('messages.json', 'r') as self.json_file:
+                self.messages_dict = json.load(self.json_file)
 
     def save(self):
         with open("messages.json", "w") as self.json_file:
@@ -31,9 +36,9 @@ class MessageStorage:
         if time is None:
             time = datetime.datetime.now()
         try:
-            self.messages_dict[chat].append([user, text, str(time), unread])
+            self.messages_dict[chat].append([user, text, str(time), str(unread)])
         except KeyError:
-            self.messages_dict[chat] = [[user, text, str(time), True]]
+            self.messages_dict[chat] = [[user, text, str(time), 'True']]
         self.save()
 
     def get_messages(self, username: str) -> dict:
@@ -45,7 +50,7 @@ class MessageStorage:
         try:
             for i in range(len(self.messages_dict[username])):
                 if self.messages_dict[username][i][-1]:
-                    self.messages_dict[username][i][-1] = False
+                    self.messages_dict[username][i][-1] = 'False'
             self.save()
             return self.messages_dict[username]
         except KeyError:
@@ -72,16 +77,15 @@ class MessageStorage:
         :param username: Имя пользователя
         :return: Есть ли непрочитанные сообщения
         """
-        return True in sum(self.messages_dict[username], [])
+        return 'True' in sum(self.messages_dict[username], [])
 
     def update_storage(self, messages: list):
         """
-        Обновляет хранилище сообщениями, полученными с сервера
+        Добавляет в хранилище новые неполученные сообщения
         :param messages: Список с сообщениями
         """
         if messages == ['']:
             return
-        self.messages_dict.clear()
         while messages:
-            self.add_message(messages[0], messages[0], messages[1], messages[2], messages[3])
-            del messages[0:4]
+            self.add_message(messages[0], messages[0], messages[1], time=messages[2], unread='True')
+            del messages[0:3]

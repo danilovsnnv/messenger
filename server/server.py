@@ -48,9 +48,9 @@ class Server:
         if accept:
             threading.Thread(target=self.message_handler, args=(client_socket,)).start()
             self.members_dict[username] = client_socket
-            self.send_unreceived_messages(client_socket, username)
+            self.send_messages(client_socket, username)
         else:
-            threading.Thread(target=self.check_user_data, args=(client_socket,)).start()
+            self.check_user_data(client_socket)
 
     def message_handler(self, client_socket: socket.socket):
         """Приём сообщений и их отправка в общий чат"""
@@ -64,19 +64,16 @@ class Server:
                 online = self.online_check(receiver_socket)
                 if online:
                     receiver_socket.send(('&' + message[0] + '&' + message[2]).encode('utf-8'))
-                    print(('&' + message[0] + '&' + message[2]).encode('utf-8'))
-                    database.add_message(message[0], message[1], message[2])
-                else:
-                    database.add_unreceived_message(message[0], message[1], message[2])
+                    database.add_message(message[0], message[1], message[2], unreceived=False)
+                database.add_message(message[0], message[1], message[2], unreceived=True)
             except KeyError:
-                database.add_unreceived_message(message[0], message[1], message[2])
-
+                database.add_message(message[0], message[1], message[2], unreceived=True)
             time.sleep(1)
 
     @staticmethod
-    def send_unreceived_messages(client_socket: socket.socket, username: str):
-        messages = database.get_unreceived_message(username)
-        client_socket.send(('&unreceived_messages&' + str(messages)).encode('utf-8'))
+    def send_messages(client_socket: socket.socket, username: str):
+        messages = database.get_messages(username)
+        client_socket.send(('&synchronize_messages&' + str(messages)).encode('utf-8'))
 
     @staticmethod
     def search_users(client_socket: socket.socket, username: str):

@@ -12,9 +12,9 @@
 
 Схема авторизации
 
-![image](https://user-images.githubusercontent.com/52496357/138460788-c0dfec4c-656a-474a-ae7f-d32743afd585.png)
-
+![image](https://user-images.githubusercontent.com/52496357/147343290-bac6dc85-fee9-4e72-a371-a7f79c8b1ad6.png)
 
 Схема обмена сообщениями
+
 ![image](https://user-images.githubusercontent.com/52496357/147342534-46634b5e-4972-41e1-a6bf-16a4f9c9090b.png)
 
